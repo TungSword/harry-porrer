@@ -1,0 +1,63 @@
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.FileNameUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * HarryBook
+ *
+ * @author huawei
+ * @since 2025-02-27
+ */
+public class ParseHarryBook {
+    public static void main(String[] args) throws IOException {
+        String path = "C:\\Users\\w30012475\\Downloads\\harry-porrer-master\\harry-porrer-master\\source";
+        final Collection<File> files = FileUtils.listFiles(new File(path), new String[] {"txt"}, false);
+
+        String resultPath = "./HarryBook/";
+        FileUtils.deleteDirectory(new File(resultPath));
+        List<String> fileNames = new ArrayList<>();
+        for (File file : files) {
+            String outputPath = resultPath + FileNameUtils.getBaseName(file.getName()) + File.separator;
+            System.out.println(outputPath);
+            fileNames.add(FileNameUtils.getBaseName(file.getName()));
+            FileUtils.createParentDirectories(new File(outputPath));
+            List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
+            List<String> contents = new ArrayList<>();
+            String chapterName = null;
+            int chapterIndex = 0;
+            List<String> chapterNames = new ArrayList<>();
+            String chapterRegex = "Chapter [\\d]{1,2}.*";
+
+            for (String line : lines) {
+                line = line.trim();
+                if (StringUtils.isNotEmpty(line) && line.matches(chapterRegex)) {
+                    chapterNames.add(line);
+                    continue;
+                }
+
+                if (line.trim().startsWith("Chapter ")) {
+                    if (CollectionUtils.isNotEmpty(contents) && StringUtils.isNotEmpty(chapterName)) {
+                        FileUtils.writeLines(new File(outputPath + chapterName), contents);
+                    }
+                    chapterName = chapterNames.get(chapterIndex);
+                    chapterIndex++;
+                    contents = new ArrayList<>();
+                }
+                if (StringUtils.isNotEmpty(line.trim())) {
+                    contents.add(line.trim());
+                    contents.add("");
+                }
+            }
+            FileUtils.writeLines(new File(outputPath + "Contents"), chapterNames);
+        }
+        FileUtils.writeLines(new File(resultPath + "Contents"), fileNames);
+    }
+}
